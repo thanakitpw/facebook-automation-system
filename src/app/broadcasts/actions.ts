@@ -1,8 +1,12 @@
 'use server'
 import { serviceClient } from '@/lib/supabase/server'
+import { requireUser } from '@/lib/supabase/auth-server'
+import { assertPageOwner } from '@/lib/ownership'
 import { resolveAudience } from '@/lib/audience'
 
 export async function startBroadcast(input: { pageId: string; templateId: string; tag: string | null; requireTag?: string }) {
+  const { user } = await requireUser()
+  await assertPageOwner(input.pageId, user.id)
   const sb = serviceClient()
   const { data: contacts } = await sb.from('contacts')
     .select('psid, subscribed, last_interaction_at, tags').eq('page_id', input.pageId)

@@ -1,10 +1,16 @@
 import { serviceClient } from '@/lib/supabase/server'
+import { requireUser } from '@/lib/supabase/auth-server'
 
 export const dynamic = 'force-dynamic'
 
 export default async function LogsPage() {
+  const { user } = await requireUser()
   const sb = serviceClient()
-  const { data: logs } = await sb.from('message_logs').select('*').order('created_at', { ascending: false }).limit(100)
+  const { data: pages } = await sb.from('pages').select('id').eq('owner_user_id', user.id)
+  const ids = (pages ?? []).map((p) => p.id)
+  const { data: logs } = ids.length
+    ? await sb.from('message_logs').select('*').in('page_id', ids).order('created_at', { ascending: false }).limit(100)
+    : { data: [] as Record<string, unknown>[] }
   return (
     <main className="p-8">
       <h1 className="mb-4 text-2xl font-semibold">Delivery Logs</h1>

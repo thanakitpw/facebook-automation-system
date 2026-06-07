@@ -1,9 +1,13 @@
 'use server'
 import { serviceClient } from '@/lib/supabase/server'
+import { requireUser } from '@/lib/supabase/auth-server'
+import { assertPageOwner } from '@/lib/ownership'
 
 export async function createTemplate(form: FormData) {
-  const sb = serviceClient()
   const pageId = form.get('pageId') as string
+  const { user } = await requireUser()
+  await assertPageOwner(pageId, user.id)
+  const sb = serviceClient()
   const type = form.get('type') as 'text' | 'image' | 'file' | 'buttons'
   const text = (form.get('text') as string) || null
   let mediaUrl: string | null = null
