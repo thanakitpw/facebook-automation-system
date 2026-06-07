@@ -25,7 +25,7 @@ it('auto_reply job uses private reply then marks sent', async () => {
     { id: 'j1', job_type: 'auto_reply', recipient_psid: 'u1', attempts: 0,
       payload: { commentId: 'c1', templateId: 't1', ruleId: 'r1' } } as any, d as any)
   expect(calls.find(c => c[0] === 'privateReply')).toBeTruthy()
-  expect(calls.find(c => c[0] === 'markSent')?.[2]).toBe('psid-x')
+  expect(calls.find(c => c[0] === 'markSent')?.[2]).toBe('private_reply')
 })
 
 it('broadcast job blocked outside window without tag → markFailed', async () => {

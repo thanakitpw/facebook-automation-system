@@ -14,7 +14,16 @@ export async function GET(req: NextRequest) {
   const deps = makeProcessDeps(new Date())
   for (const job of jobs ?? []) {
     try { await processJob(job as any, deps) }
-    catch (e) { await deps.markFailed((job as any).id, String(e)) }
+    catch (e) {
+      const j = job as any
+      const attempt = (j.attempts ?? 0) + 1
+      if (attempt < 5) {
+        const delayMs = Math.min(60_000 * 2 ** (attempt - 1), 3_600_000)
+        await deps.markRetry(j.id, new Date(Date.now() + delayMs), String(e))
+      } else {
+        await deps.markFailed(j.id, String(e))
+      }
+    }
   }
   return Response.json({ processed: jobs?.length ?? 0 })
 }

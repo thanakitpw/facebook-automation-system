@@ -1,13 +1,18 @@
 import { NextRequest } from 'next/server'
 import { serviceClient } from '@/lib/supabase/server'
+import { requireUser } from '@/lib/supabase/auth-server'
 import { encryptToken } from '@/lib/crypto'
 
 const V = process.env.FB_GRAPH_VERSION!
 
 export async function GET(req: NextRequest) {
+  let user
+  try { ({ user } = await requireUser()) }
+  catch { return new Response('unauthorized', { status: 401 }) }
+  const ownerUserId = user.id // derive owner from session, not the untrusted state param
+
   const code = req.nextUrl.searchParams.get('code')
-  const ownerUserId = req.nextUrl.searchParams.get('state') // logged-in user id passed as state
-  if (!code || !ownerUserId) return new Response('missing code/state', { status: 400 })
+  if (!code) return new Response('missing code', { status: 400 })
 
   const redirect = `${req.nextUrl.origin}/api/facebook/connect`
   const tokRes = await fetch(`https://graph.facebook.com/${V}/oauth/access_token?client_id=${process.env.FB_APP_ID}&client_secret=${process.env.FB_APP_SECRET}&redirect_uri=${encodeURIComponent(redirect)}&code=${code}`)

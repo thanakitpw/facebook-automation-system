@@ -44,7 +44,7 @@ export async function processJob(job: QueueJob, d: ProcessDeps): Promise<void> {
     const tmpl = await d.loadTemplate(job.payload.templateId)
     // Private reply opens the conversation; send the template text as the reply body.
     const pr = await d.privateReply({ pageToken: ctx.pageToken, commentId: job.payload.commentId, message: tmpl.text ?? '', graphVersion: d.graphVersion })
-    if (pr.ok) return d.markSent(job.id, pr.recipientPsid, pr.recipientPsid)
+    if (pr.ok) return d.markSent(job.id, 'private_reply', pr.recipientPsid)
     return attempt >= MAX_ATTEMPTS ? d.markFailed(job.id, pr.error) : d.markRetry(job.id, new Date(d.now.getTime() + nextBackoffMs(attempt)), pr.error)
   }
 
