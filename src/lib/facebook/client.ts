@@ -1,22 +1,25 @@
 import type { MessagePayload, SendArgs, SendResult } from './types'
 
 function buildMessage(p: MessagePayload): Record<string, unknown> {
-  if (p.kind === 'text') return { text: p.text }
-  if (p.kind === 'image' || p.kind === 'file') {
-    return { attachment: { type: p.kind === 'image' ? 'image' : 'file', payload: { url: p.url, is_reusable: true } } }
-  }
-  // buttons
-  return {
-    attachment: {
-      type: 'template',
-      payload: {
-        template_type: 'button',
-        text: p.text,
-        buttons: p.buttons.map((b) =>
-          b.url ? { type: 'web_url', title: b.title, url: b.url }
-                : { type: 'postback', title: b.title, payload: b.payload ?? b.title }),
-      },
-    },
+  switch (p.kind) {
+    case 'text':
+      return { text: p.text }
+    case 'image':
+    case 'file':
+      return { attachment: { type: p.kind === 'image' ? 'image' : 'file', payload: { url: p.url, is_reusable: true } } }
+    case 'buttons':
+      return {
+        attachment: {
+          type: 'template',
+          payload: {
+            template_type: 'button',
+            text: p.text,
+            buttons: p.buttons.map((b) =>
+              b.url ? { type: 'web_url', title: b.title, url: b.url }
+                    : { type: 'postback', title: b.title, payload: b.payload ?? b.title }),
+          },
+        },
+      }
   }
 }
 
