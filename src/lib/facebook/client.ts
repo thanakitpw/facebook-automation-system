@@ -35,3 +35,17 @@ export async function sendMessage(args: SendArgs): Promise<SendResult> {
   if (!resp.ok) return { ok: false, error: data?.error?.message ?? `HTTP ${resp.status}` }
   return { ok: true, messageId: data.message_id }
 }
+
+export async function sendPrivateReply(args: {
+  pageToken: string; commentId: string; message: string; graphVersion: string; fetchImpl?: typeof fetch
+}): Promise<{ ok: true; recipientPsid: string } | { ok: false; error: string }> {
+  const f = args.fetchImpl ?? fetch
+  const url = `https://graph.facebook.com/${args.graphVersion}/${args.commentId}/private_replies?access_token=${encodeURIComponent(args.pageToken)}`
+  const resp = await f(url, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ message: args.message }),
+  })
+  const data = await resp.json()
+  if (!resp.ok) return { ok: false, error: data?.error?.message ?? `HTTP ${resp.status}` }
+  return { ok: true, recipientPsid: data.recipient_id }
+}
