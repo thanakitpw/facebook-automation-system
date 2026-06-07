@@ -1,0 +1,25 @@
+import { serviceClient } from '@/lib/supabase/server'
+
+export const dynamic = 'force-dynamic'
+
+export default async function LogsPage() {
+  const sb = serviceClient()
+  const { data: logs } = await sb.from('message_logs').select('*').order('created_at', { ascending: false }).limit(100)
+  return (
+    <main className="p-8">
+      <h1 className="mb-4 text-2xl font-semibold">Delivery Logs</h1>
+      <table className="w-full text-sm">
+        <thead><tr className="text-left text-gray-500"><th>Time</th><th>Type</th><th>Recipient</th><th>Status</th><th>Detail</th></tr></thead>
+        <tbody>
+          {(logs ?? []).map((l) => (
+            <tr key={l.id} className="border-t">
+              <td>{new Date(l.created_at).toLocaleString()}</td><td>{l.job_type}</td><td>{l.recipient_psid}</td>
+              <td className={l.status === 'sent' ? 'text-green-600' : 'text-red-600'}>{l.status}</td>
+              <td>{l.fb_message_id ?? l.error}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </main>
+  )
+}
