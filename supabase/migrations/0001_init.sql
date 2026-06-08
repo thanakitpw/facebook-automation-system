@@ -114,4 +114,7 @@ create policy "own broadcasts" on broadcasts for all using (
 alter table message_logs enable row level security;
 create policy "own logs" on message_logs for all using (
   page_id in (select id from pages where owner_user_id = auth.uid()));
--- message_queue is accessed only by the service role (cron); no anon policy, RLS left disabled intentionally.
+-- message_queue is accessed only by the service role (cron worker + server actions).
+-- RLS is enabled (with no policies) in migration 0005 so anon/authenticated are denied
+-- while the service role bypasses RLS. NOTE: leaving RLS disabled here would expose the
+-- table to the anon key in Supabase, so 0005 is required for this table to be secure.
