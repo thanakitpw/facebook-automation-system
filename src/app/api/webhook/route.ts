@@ -18,7 +18,16 @@ export async function POST(req: NextRequest) {
     return new Response('bad signature', { status: 401 })
   }
   const events = parseWebhook(JSON.parse(raw))
-  // Fire-and-forget so we return 200 fast; errors are logged, not surfaced to FB.
-  handleEvents(events, makeHandlerDb()).catch((e) => console.error('handleEvents', e))
+  // Await the enqueue before responding. On serverless, work left running after
+  // the response returns can be killed before it finishes — so a fire-and-forget
+  // here silently drops events. Enqueuing is fast (a few DB inserts); the slow
+  // send work happens later in the cron worker, so we still return well within
+  // Facebook's webhook timeout. Errors are logged, not surfaced (idempotency keys
+  // make any Facebook redelivery safe).
+  try {
+    await handleEvents(events, makeHandlerDb())
+  } catch (e) {
+    console.error('handleEvents', e)
+  }
   return new Response('ok', { status: 200 })
 }
